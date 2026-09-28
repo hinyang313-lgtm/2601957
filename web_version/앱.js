@@ -30,38 +30,45 @@ function 상태알림(글, 나쁨 = false) {
   요소.상태.classList.toggle("나쁨", 나쁨);
 }
 
+// 후보 한 줄을 만든다. 채울 값이 없으면 빈 막대만 보여준다.
+function 후보줄(이름, 비율) {
+  const 줄 = document.createElement("li");
+
+  const 이름칸 = document.createElement("strong");
+  이름칸.textContent = 이름;
+
+  const 막대 = document.createElement("div");
+  막대.className = "막대";
+  const 채움 = document.createElement("span");
+  채움.style.width = 비율 === null ? "0%" : `${Math.max(1, 비율)}%`;
+  막대.append(채움);
+
+  const 비율칸 = document.createElement("span");
+  비율칸.className = "비율";
+  비율칸.textContent = 비율 === null ? "" : `${비율.toFixed(1)}%`;
+
+  줄.append(이름칸, 막대, 비율칸);
+  return 줄;
+}
+
 function 결과지우기() {
-  요소.으뜸.innerHTML = "&nbsp;";
+  요소.으뜸.textContent = "?";
   요소.후보.innerHTML = "";
+  for (let 번호 = 0; 번호 < 보일후보수; 번호 += 1) {
+    요소.후보.append(후보줄("-", null));
+  }
 }
 
 function 결과보이기(확률) {
   const 순서 = Array.from(확률.keys()).sort((가, 나) => 확률[나] - 확률[가]);
   const 으뜸숫자 = 순서[0];
-  요소.으뜸.innerHTML = `인식 결과 <span class="숫자">${으뜸숫자}</span> <small>${(
+  요소.으뜸.innerHTML = `${으뜸숫자}<span class="비율">${(
     확률[으뜸숫자] * 100
-  ).toFixed(1)}%</small>`;
+  ).toFixed(1)}%</span>`;
 
   요소.후보.innerHTML = "";
   for (const 숫자 of 순서.slice(0, 보일후보수)) {
-    const 비율 = 확률[숫자] * 100;
-    const 줄 = document.createElement("li");
-
-    const 이름 = document.createElement("strong");
-    이름.textContent = String(숫자);
-
-    const 막대 = document.createElement("div");
-    막대.className = "막대";
-    const 채움 = document.createElement("span");
-    채움.style.width = `${Math.max(1, 비율)}%`;
-    막대.append(채움);
-
-    const 숫자글 = document.createElement("span");
-    숫자글.className = "비율";
-    숫자글.textContent = `${비율.toFixed(1)}%`;
-
-    줄.append(이름, 막대, 숫자글);
-    요소.후보.append(줄);
+    요소.후보.append(후보줄(String(숫자), 확률[숫자] * 100));
   }
 }
 
@@ -78,21 +85,22 @@ function 인식하기() {
     상태알림("먼저 숫자를 그려 주세요");
     return;
   }
-  const 시작 = performance.now();
   const 확률 = 모델.예측(정규화(스물여덟, 모델.정규화.평균, 모델.정규화.표준편차));
-  const 걸린시간 = performance.now() - 시작;
   결과보이기(확률);
-  상태알림(`추론에 ${걸린시간.toFixed(0)}밀리초 걸렸습니다`);
+  상태알림("그림을 그리면 자동으로 인식합니다.");
 }
 
 function 지우기() {
   그림판판.지우기();
   결과지우기();
-  상태알림(모델 === null ? "모델을 불러오는 중입니다" : "숫자를 그리세요");
+  상태알림(
+    모델 === null ? "모델을 불러오는 중입니다" : "그림을 그리면 자동으로 인식합니다."
+  );
 }
 
 const 그림판판 = new 그림판(요소.캔버스, { 그린뒤: 인식하기 });
 
+결과지우기();
 요소.인식단추.addEventListener("click", 인식하기);
 요소.지우기단추.addEventListener("click", 지우기);
 요소.인식단추.disabled = true;
@@ -105,7 +113,7 @@ const 그림판판 = new 그림판(요소.캔버스, { 그린뒤: 인식하기 }
       적재중에그렸다 = false;
       인식하기();
     } else {
-      상태알림("숫자를 그리세요");
+      상태알림("그림을 그리면 자동으로 인식합니다.");
     }
   })
   .catch((잘못) => {
