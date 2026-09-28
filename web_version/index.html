@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>손글씨 인식 (웹 버전)</title>
+    <link rel="stylesheet" href="스타일.css" />
+  </head>
+  <body>
+    <p class="학생">학번 2601957 이름 양해인</p>
+
+    <main>
+      <h1>손글씨 인식</h1>
+      <p class="설명">
+        칸 안에 숫자 하나를 크게 그리세요. 외부 라이브러리 없이 순수 자바스크립트로
+        브라우저 안에서 바로 추론합니다.
+      </p>
+
+      <!-- 모듈을 못 읽으면 앱.js가 실행되지 않아 이 안내가 그대로 남는다.
+           file:// 로 열었을 때가 대표적인 경우다(브라우저가 모듈을 CORS로 막는다). -->
+      <p id="모듈안내" class="경고">
+        자바스크립트 모듈을 불러오지 못했습니다. 파일을 두 번 눌러
+        <code>file://</code>로 열었다면 동작하지 않습니다. 이 폴더에서
+        <code>python3 -m http.server 8000</code>을 실행한 뒤
+        <code>http://localhost:8000/</code>으로 여세요.
+      </p>
+
+      <div class="판">
+        <canvas id="그림판" width="280" height="280" aria-label="숫자를 그리는 칸"></canvas>
+      </div>
+
+      <div class="단추칸">
+        <button id="인식단추" type="button">인식</button>
+        <button id="지우기단추" type="button">지우기</button>
+      </div>
+
+      <p id="상태" class="상태" role="status">모델을 불러오는 중입니다</p>
+
+      <section class="결과칸" aria-live="polite">
+        <p id="으뜸" class="으뜸">&nbsp;</p>
+        <ol id="후보" class="후보"></ol>
+      </section>
+
+      <footer>
+        <p>
+          같은 모델을 쓰는 데스크톱 버전은 저장소의 <code>desktop_version/</code>에 있습니다.
+          자바스크립트 추론이 파이썬과 같은 답을 내는지 확인하는 페이지는
+          <a href="검증.html">검증.html</a>입니다(정답 자료를 먼저 만들어야 열립니다).
+        </p>
+      </footer>
+    </main>
+
+    <script type="module" src="앱.js"></script>
+  </body>
+</html>

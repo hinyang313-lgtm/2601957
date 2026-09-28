@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>웹 버전 검증</title>
+    <link rel="stylesheet" href="스타일.css" />
+    <style>
+      main { max-width: 760px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
+      th, td { padding: 8px 10px; border-bottom: 1px solid var(--선); text-align: left; }
+      td.수 { text-align: right; font-variant-numeric: tabular-nums; }
+      .통과 { color: #1a7f37; font-weight: 700; }
+      .실패 { color: var(--경고); font-weight: 700; }
+      pre { overflow-x: auto; font-size: 12px; background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; }
+    </style>
+  </head>
+  <body>
+    <p class="학생">학번 2601957 이름 양해인</p>
+    <main>
+      <h1>웹 버전 검증</h1>
+      <p class="설명">
+        <code>desktop_version/검증데이터만들기.py</code>가 만든 정답 자료를 자바스크립트
+        경로로 통과시켜 파이썬 결과와 대조합니다.
+      </p>
+      <p id="모듈안내" class="경고">
+        자바스크립트 모듈을 불러오지 못했습니다.
+        <code>python3 -m http.server 8000</code>으로 서버를 띄운 뒤 여세요.
+      </p>
+      <p id="진행" class="상태" role="status">준비 중입니다</p>
+      <table>
+        <thead>
+          <tr><th>검사</th><th>기준</th><th class="수">실측</th><th>판정</th></tr>
+        </thead>
+        <tbody id="표"></tbody>
+      </table>
+      <p id="요약" class="으뜸"></p>
+      <pre id="자세히"></pre>
+      <footer><p><a href="index.html">← 손글씨 인식으로 돌아가기</a></p></footer>
+    </main>
+
+    <script type="module">
+      import { 전처리, 정규화, 그림만들기 } from "./전처리.js";
+      import { 모델불러오기 } from "./모델.js";
+
+      document.getElementById("모듈안내").remove();
+      const 진행 = document.getElementById("진행");
+      const 표 = document.getElementById("표");
+      const 요약 = document.getElementById("요약");
+      const 자세히 = document.getElementById("자세히");
+
+      const 순전파_기준 = 1e-4;
+      const 정확도_기준 = 0.97;
+
+      function 줄추가(이름, 기준, 실측, 통과) {
+        const 줄 = document.createElement("tr");
+        줄.innerHTML =
+          `<td>${이름}</td><td>${기준}</td><td class="수">${실측}</td>` +
+          `<td class="${통과 ? "통과" : "실패"}">${통과 ? "통과" : "실패"}</td>`;
+        표.append(줄);
+      }
+
+      function base64를배열로(글) {
+        const 바이너리 = atob(글);
+        const 배열 = new Uint8Array(바이너리.length);
+        for (let 자리 = 0; 자리 < 바이너리.length; 자리 += 1) {
+          배열[자리] = 바이너리.charCodeAt(자리);
+        }
+        return 배열;
+      }
+
+      const 잠깐쉬기 = () => new Promise((맞음) => setTimeout(맞음, 0));
+
+      async function 검사하기() {
+        진행.textContent = "모델과 정답 자료를 불러오는 중입니다";
+        const 모델 = await 모델불러오기(".");
+
+        const 응답 = await fetch("./검증데이터.json");
+        if (!응답.ok) {
+          throw new Error(
+            `검증데이터.json을 읽지 못했습니다 (HTTP ${응답.status}). ` +
+              "desktop_version에서 python3 검증데이터만들기.py 를 먼저 실행하세요."
+          );
+        }
+        const 자료 = await 응답.json();
+        const 평균 = 모델.정규화.평균;
+        const 표준편차 = 모델.정규화.표준편차;
+
+        let 최대확률차 = 0;
+        let 최대전처리차 = 0;
+        const 맞은수 = { 확대: 0, 획: 0 };
+        const 전체수 = { 확대: 0, 획: 0 };
+        const 빈전처리 = [];
+        const 틀린것 = [];
+
+        for (let 번호 = 0; 번호 < 자료.표본.length; 번호 += 1) {
+          const 표본 = 자료.표본[번호];
+
+          // 검사 1. 파이썬이 만든 28x28을 그대로 넣어 순전파만 비교한다.
+          // 정규화 식을 여기 다시 적지 않고 전처리.js의 정규화를 쓴다.
+          const 확률 = 모델.예측(정규화(표본.파이썬전처리, 평균, 표준편차));
+          for (let 숫자 = 0; 숫자 < 10; 숫자 += 1) {
+            const 차 = Math.abs(확률[숫자] - 표본.파이썬확률[숫자]);
+            if (차 > 최대확률차) 최대확률차 = 차;
+          }
+
+          // 검사 2. 280x280 원본 그림을 자바스크립트 전처리부터 통과시킨다.
+          const 밝기 = base64를배열로(표본.그림base64);
+          const 그림 = 그림만들기(표본.그림가로, 표본.그림세로, Float32Array.from(밝기));
+          const 스물여덟 = 전처리(그림);
+          전체수[표본.종류] += 1;
+          if (스물여덟 === null) {
+            // 여기서 되돌아가면 아래 요약이 나오지 않는다. 기록만 하고 계속 간다.
+            빈전처리.push(표본.이름);
+            continue;
+          }
+          for (let 자리 = 0; 자리 < 784; 자리 += 1) {
+            const 차 = Math.abs(스물여덟[자리] - 표본.파이썬전처리[자리]);
+            if (차 > 최대전처리차) 최대전처리차 = 차;
+          }
+          const 확률2 = 모델.예측(정규화(스물여덟, 평균, 표준편차));
+          let 으뜸 = 0;
+          for (let 숫자 = 1; 숫자 < 10; 숫자 += 1) {
+            if (확률2[숫자] > 확률2[으뜸]) 으뜸 = 숫자;
+          }
+          if (으뜸 === 표본.정답) {
+            맞은수[표본.종류] += 1;
+          } else {
+            틀린것.push(`${표본.이름} 정답 ${표본.정답} 예측 ${으뜸}`);
+          }
+
+          if (번호 % 10 === 0) {
+            진행.textContent = `검사 중입니다 ${번호 + 1}/${자료.표본.length}`;
+            await 잠깐쉬기();
+          }
+        }
+
+        const 확대정확도 = 전체수.확대 ? 맞은수.확대 / 전체수.확대 : 0;
+        const 획정확도 = 전체수.획 ? 맞은수.획 / 전체수.획 : 0;
+
+        const 검사들 = [
+          [
+            "순전파 일치 (같은 28x28 입력)",
+            `최대 절대차 ${순전파_기준} 이하`,
+            최대확률차.toExponential(2),
+            최대확률차 <= 순전파_기준,
+          ],
+          [
+            "전체 정확도 (확대 무리)",
+            `${(정확도_기준 * 100).toFixed(0)}% 이상`,
+            `${(확대정확도 * 100).toFixed(1)}% (${맞은수.확대}/${전체수.확대})`,
+            확대정확도 >= 정확도_기준,
+          ],
+          [
+            "빈 전처리 없음",
+            "0건",
+            `${빈전처리.length}건`,
+            빈전처리.length === 0,
+          ],
+        ];
+        for (const [이름, 기준, 실측, 통과] of 검사들) 줄추가(이름, 기준, 실측, 통과);
+
+        // 참고용. 통과 기준에는 넣지 않는다.
+        줄추가(
+          "획 무리 정확도 (참고)",
+          "기준 없음",
+          `${(획정확도 * 100).toFixed(1)}% (${맞은수.획}/${전체수.획})`,
+          획정확도 >= 0.9
+        );
+        줄추가(
+          "28x28 중간 결과 차이 (참고)",
+          "LANCZOS와 면적 평균의 차이라 0이 아니다",
+          최대전처리차.toFixed(4),
+          true
+        );
+
+        const 모두통과 = 검사들.every(([, , , 통과]) => 통과);
+        진행.textContent = "검사가 끝났습니다";
+        요약.textContent = 모두통과
+          ? "모든 검사를 통과했습니다."
+          : "실패한 검사가 있습니다.";
+        요약.className = 모두통과 ? "으뜸 통과" : "으뜸 실패";
+
+        const 적을것 = [];
+        if (빈전처리.length) 적을것.push(`전처리가 비었던 표본: ${빈전처리.join(", ")}`);
+        if (틀린것.length) 적을것.push("틀린 표본:\n  " + 틀린것.join("\n  "));
+        자세히.textContent = 적을것.join("\n\n");
+        window.검사결과 = {
+          모두통과,
+          최대확률차,
+          최대전처리차,
+          확대정확도,
+          획정확도,
+          빈전처리,
+          틀린것,
+        };
+      }
+
+      검사하기().catch((잘못) => {
+        console.error(잘못);
+        진행.textContent = `검사를 하지 못했습니다. ${잘못.message}`;
+        진행.classList.add("나쁨");
+        요약.textContent = "실패한 검사가 있습니다.";
+        요약.className = "으뜸 실패";
+        window.검사결과 = { 모두통과: false, 잘못: 잘못.message };
+      });
+    </script>
+  </body>
+</html>

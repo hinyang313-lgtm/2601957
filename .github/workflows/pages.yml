@@ -1,0 +1,44 @@
+name: 깃허브 페이지 배포
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치지 않게 한 번에 하나만 돌린다. 진행 중인 배포는 취소하지 않는다.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  배포:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.배포단계.outputs.page_url }}
+    steps:
+      - name: 저장소 내려받기
+        uses: actions/checkout@v4
+
+      # enablement: true 가 Pages의 Source를 GitHub Actions로 맞춘다.
+      # 저장소 맨 위에 index.html이 없어서 브랜치 방식으로는 배포되지 않는다.
+      - name: Pages 설정
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # web_version 폴더만 올린다. 여기에 index.html이 있다.
+      - name: web_version 올리기
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web_version
+
+      - name: 배포
+        id: 배포단계
+        uses: actions/deploy-pages@v4

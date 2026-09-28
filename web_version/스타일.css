@@ -1,0 +1,216 @@
+/* 손글씨 인식 웹 버전 화면 */
+
+:root {
+  --바탕: #f5f6f8;
+  --글자: #1b1d21;
+  --흐린글자: #5d636e;
+  --선: #d6d9df;
+  --강조: #2f6fed;
+  --경고: #b23c17;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0 16px 48px;
+  background: var(--바탕);
+  color: var(--글자);
+  font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui,
+    sans-serif;
+  line-height: 1.6;
+}
+
+.학생 {
+  margin: 0 -16px 24px;
+  padding: 12px 16px;
+  background: var(--글자);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+main {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.설명 {
+  margin: 0 0 20px;
+  color: var(--흐린글자);
+}
+
+.경고 {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--경고);
+  border-radius: 8px;
+  background: #fdf1ec;
+  color: var(--경고);
+  font-size: 14px;
+}
+
+.경고 code {
+  background: #ffffff;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.판 {
+  display: flex;
+  justify-content: center;
+}
+
+canvas {
+  width: 280px;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  background: #000000;
+  border: 1px solid var(--선);
+  border-radius: 12px;
+  cursor: crosshair;
+}
+
+.단추칸 {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 16px 0 8px;
+}
+
+button {
+  min-width: 110px;
+  padding: 10px 18px;
+  border: 1px solid var(--선);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--글자);
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:hover:enabled {
+  border-color: var(--강조);
+  color: var(--강조);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.상태 {
+  margin: 0 0 12px;
+  color: var(--흐린글자);
+  font-size: 14px;
+  text-align: center;
+  min-height: 1.6em;
+}
+
+.상태.나쁨 {
+  color: var(--경고);
+}
+
+.결과칸 {
+  padding: 16px;
+  border: 1px solid var(--선);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.으뜸 {
+  margin: 0 0 12px;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.으뜸 .숫자 {
+  font-size: 40px;
+  color: var(--강조);
+}
+
+.후보 {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.후보 li {
+  display: grid;
+  grid-template-columns: 2.2em 1fr 4.2em;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.후보 .막대 {
+  height: 10px;
+  border-radius: 5px;
+  background: #e6e9ef;
+  overflow: hidden;
+}
+
+.후보 .막대 span {
+  display: block;
+  height: 100%;
+  background: var(--강조);
+}
+
+.후보 .비율 {
+  text-align: right;
+  color: var(--흐린글자);
+  font-size: 14px;
+}
+
+footer {
+  margin-top: 24px;
+  color: var(--흐린글자);
+  font-size: 13px;
+}
+
+footer a {
+  color: var(--강조);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --바탕: #16181c;
+    --글자: #e9ebef;
+    --흐린글자: #9aa1ad;
+    --선: #333842;
+    --강조: #7aa2f7;
+    --경고: #f0846a;
+  }
+
+  .학생 {
+    background: #000000;
+  }
+
+  .경고 {
+    background: #2a1d19;
+  }
+
+  .경고 code,
+  button,
+  .결과칸 {
+    background: #1e2127;
+    color: var(--글자);
+  }
+
+  .후보 .막대 {
+    background: #2a2e37;
+  }
+}
