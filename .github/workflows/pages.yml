@@ -17,11 +17,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  배포:
+  # 잡과 스텝의 id는 영문이어야 한다. 한글로 적으면 워크플로 자체가 뜨지 않는다.
+  # 화면에 보이는 이름(name)은 한글로 둔다.
+  deploy:
+    name: 배포
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.배포단계.outputs.page_url }}
+      url: ${{ steps.deploy-step.outputs.page_url }}
     steps:
       - name: 저장소 내려받기
         uses: actions/checkout@v4
@@ -40,5 +43,5 @@ jobs:
           path: web_version
 
       - name: 배포
-        id: 배포단계
+        id: deploy-step
         uses: actions/deploy-pages@v4
